@@ -1,12 +1,6 @@
-# **Behavioral Cloning** 
+# Writeup Behavioral Cloning Project
 
-## Writeup Template
-
-### You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
-**Behavioral Cloning Project**
+## Project Goals
 
 The goals / steps of this project are the following:
 * Use the simulator to collect data of good driving behavior
@@ -19,15 +13,9 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
-[image3]: ./examples/placeholder_small.png "Recovery Image"
-[image4]: ./examples/placeholder_small.png "Recovery Image"
-[image5]: ./examples/placeholder_small.png "Recovery Image"
-[image6]: ./examples/placeholder_small.png "Normal Image"
-[image7]: ./examples/placeholder_small.png "Flipped Image"
 
 ## Rubric Points
-### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
+### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.
 
 ---
 ### Files Submitted & Code Quality
@@ -38,7 +26,7 @@ My project includes the following files:
 * model.py containing the script to create and train the model
 * drive.py for driving the car in autonomous mode
 * model.h5 containing a trained convolution neural network 
-* writeup_report.md or writeup_report.pdf summarizing the results
+* writeup_report.md summarizing the results
 
 #### 2. Submission includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
@@ -52,7 +40,46 @@ The model.py file contains the code for training and saving the convolution neur
 
 ### Model Architecture and Training Strategy
 
-#### 1. An appropriate model architecture has been employed
+#### 1. Final Model
+
+The final model consits for the follwing layers
+* Image cropping to focus on the road.
+* Image normalization using per_image_standardization
+
+Training elements:136426
+Input shape:(160, 320, 3)
+
+
+model = Sequential()
+
+# cropping
+# keep only the road
+model.add(Cropping2D(cropping=((70,25),(0,0)), input_shape=input_shape))
+
+# normalize data and mean centering
+# model.add(Lambda(lambda  x: x / 255.0 - 0.5))
+model.add(Lambda(per_image_standardization))
+
+# image conversion to yuv
+model.add(Lambda(rgb_image_to_yuv_conversion))
+
+# use model from nvidia
+# https://devblogs.nvidia.com/deep-learning-self-driving-cars/
+# Convolutional layer with 2x3 stride and 5x5 kernel
+model.add(Conv2D(24, 5, 5, subsample=(2,2), border_mode='valid', activation="elu"))
+model.add(Conv2D(36, 5, 5, subsample=(2,2), border_mode='valid', activation="elu"))
+model.add(Conv2D(48, 5, 5, subsample=(2,2), border_mode='valid', activation="elu"))
+
+# Convolutional layer without stride and 3x3 kernel
+model.add(Conv2D(64, 3, 3, border_mode='valid', activation="elu"))
+model.add(Conv2D(64, 3, 3, border_mode='valid', activation="elu"))
+
+# Fully connected layer
+model.add(Flatten())
+model.add(Dense(100))
+model.add(Dense(50))
+model.add(Dense(10))
+model.add(Dense(1))
 
 My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 (model.py lines 18-24) 
 
