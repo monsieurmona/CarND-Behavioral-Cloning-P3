@@ -69,6 +69,7 @@ As the direction of the road should lead a driver, the images will be cropped to
 The resulting images will be normalized and converted from RGB color space to YUV.
 
 YUV images:
+
 ![Luma][image_yuv_luma] ![Blue][image_yuv_blue] ![Yelow][image_yuv_yellow]
 
 #### Correction of steering angle
