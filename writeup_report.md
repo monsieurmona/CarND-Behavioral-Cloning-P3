@@ -12,7 +12,22 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/placeholder.png "Model Visualization"
+[image_nvidia_model]: ./doc/img/cnn-architecture-624x890.png "Model Visualization"
+[image_left_camera]: ./doc/img/left_2018_07_19_22_52_45_926.jpg "Left Camera Image"
+[image_center_camera]: ./doc/img/center_2018_07_19_22_52_45_988.jpg "Center Camera Image"
+[image_right_camera]: ./doc/img/right_2018_07_19_22_52_45_926.jpg "Right Camera Image"
+[image_cropped_road]: ./doc/img/center_2018_07_19_22_52_45_988_cropped.jpg "Cropped Raod"
+
+[image_yuv_luma]: ./doc/img/center_2018_07_19_22_52_45_988-YCbCr_ITU_R709_luma.jpg "Luma Channel"
+[image_yuv_blue]: ./doc/img/center_2018_07_19_22_52_45_988-YCbCr_ITU_R709_blueness.jpg "Blue Channel"
+[image_yuv_yellow]: ./doc/img/center_2018_07_19_22_52_45_988-YCbCr_ITU_R709_yellowness.jpg "Blue Channel"
+
+[image_original_dist]: ./doc/img/historgram_original_distribution.png "Original distribution"
+[image_normalized_dist]: ./doc/img/historgram_normalized_distribution.png "Normalized distribution"
+
+[image_final_loss]: ./doc/img/loss.png "Training and Validation Loss"
+
+[video_autonomous_driving]: ./video.mp4 "Autonomous Driving"
 
 ## Rubric Points
 ### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.
@@ -30,6 +45,7 @@ My project includes the following files:
 
 #### 2. Submission includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
+
 ```sh
 python drive.py model.h5
 ```
@@ -40,117 +56,99 @@ The model.py file contains the code for training and saving the convolution neur
 
 ### Model Architecture and Training Strategy
 
-#### 1. Final Model
+#### Input Images.
 
-The final model consits for the follwing layers
-* Image cropping to focus on the road.
-* Image normalization using per_image_standardization
+The input images come from three cameras "mounted" on the left, center and right of the car.
 
-Training elements:136426
-Input shape:(160, 320, 3)
+![Left Camera Image][image_left_camera] ![Center Camera Image][image_center_camera] ![Right Camera Image][image_right_camera]
 
+As the direction of the road should lead a driver, the images will be cropped to focus on the road parts.
 
-model = Sequential()
+![Cropped road][image_cropped_road]
 
-# cropping
-# keep only the road
-model.add(Cropping2D(cropping=((70,25),(0,0)), input_shape=input_shape))
+The resulting images will be normalized and converted from RGB color space to YUV.
 
-# normalize data and mean centering
-# model.add(Lambda(lambda  x: x / 255.0 - 0.5))
-model.add(Lambda(per_image_standardization))
+YUV images:
+![Luma][image_yuv_luma] ![Blue][image_yuv_blue] ![Yelow][image_yuv_yellow]
 
-# image conversion to yuv
-model.add(Lambda(rgb_image_to_yuv_conversion))
+#### Correction of steering angle
 
-# use model from nvidia
-# https://devblogs.nvidia.com/deep-learning-self-driving-cars/
-# Convolutional layer with 2x3 stride and 5x5 kernel
-model.add(Conv2D(24, 5, 5, subsample=(2,2), border_mode='valid', activation="elu"))
-model.add(Conv2D(36, 5, 5, subsample=(2,2), border_mode='valid', activation="elu"))
-model.add(Conv2D(48, 5, 5, subsample=(2,2), border_mode='valid', activation="elu"))
+The recored steering angle of left and right camera images must be corrected. It looks like the car is on the right side of the road, if you look at a camera image from the left side, even the car in the center of the raod.
 
-# Convolutional layer without stride and 3x3 kernel
-model.add(Conv2D(64, 3, 3, border_mode='valid', activation="elu"))
-model.add(Conv2D(64, 3, 3, border_mode='valid', activation="elu"))
+I have found the best correction value be experiment. I have build a simple network and choose the best correction value by traing a model with a range of correction values and chose the one with the lowest validation loss.
 
-# Fully connected layer
-model.add(Flatten())
-model.add(Dense(100))
-model.add(Dense(50))
-model.add(Dense(10))
-model.add(Dense(1))
+**The correction value I have found is +/- 0.5**
 
-My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 (model.py lines 18-24) 
+#### Recording
 
-The model includes RELU layers to introduce nonlinearity (code line 20), and the data is normalized in the model using a Keras lambda layer (code line 18). 
+I drove the simulated car several times on both tracks in forward direction and in reverse direction. Additonally, I recorded only curves and several "rescue" situations to bring the car back to the track.
 
-#### 2. Attempts to reduce overfitting in the model
+**I collected finially 97701 training images**,consisting of left, center and right camera images.
 
-The model contains dropout layers in order to reduce overfitting (model.py lines 21). 
+#### Choosing images
 
-The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
+Driving straight is by far overrepresented. Thus, I have shuffled the images and stopped accepping new images for certain steering angle bins.
 
-#### 3. Model parameter tuning
+The first histogram shows the original distribution, the second histogram shows the normalized distribution (with corrected, steering angles and additional flipped images)
 
-The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 25).
+![Original Destribution][image_original_dist] ![Normalized Distribution][image_normalized_dist]
 
-#### 4. Appropriate training data
+**68213 left after filtering**
 
-Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road ... 
+#### Image augumenation
 
-For details about how I created the training data, see the next section. 
+I assumed that flipping images would be a usefull way increase the amount of training examples. I have tested this with a simple model. The validation lost decreased a bit, especially in the first epochs. Further it helped to have an even distribution of left and right turns.
 
-### Model Architecture and Training Strategy
+**This doubled the amount of images to 136426 images**
 
-#### 1. Solution Design Approach
+#### Model search
 
-The overall strategy for deriving a model architecture was to ...
+I started with a very simple model, one convulution later, max pooling and a small fully connected network, to see effects of paramter changes quickly. I used also only a small subset of training data.
 
-My first step was to use a convolution neural network model similar to the ... I thought this model might be appropriate because ...
+At the next step I compared the small network with a LeNet implementation. The learning converged way quicker and the finial validation loss outperformed the simple network (valiation loss: 0.0142 / validation loss: 0.0130).
 
-In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
+The results from [Convolutional Neuronal Network (CNN) Architecture](https://devblogs.nvidia.com/deep-learning-self-driving-cars/) from Nvidia looked promising. I wanted to see if the network configuration is also helpful for this car simulation. I didn't see yet an improvment with validation loss. But the car drove much better in autonomunous mode simulation.
 
-To combat the overfitting, I modified the model so that ...
+All these experiments have in common that the models overfits with a small subset of image data. Giving more training data helped to reduce overfitting. Adding a dropout layer after the convolution layer decreased the performance instead.
 
-Then I ... 
+#### Final Model
 
-The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track... to improve the driving behavior in these cases, I ....
+The final model consists for the follwing layers:
 
-At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
+* Preprocessing
+ * Image cropping to focus on the road.
+ * Image normalization using per_image_standardization
+ * Convert images to YUV color space
+* [Convolutional Neuronal Network (CNN) Architecture](https://devblogs.nvidia.com/deep-learning-self-driving-cars/) from Nvidia
+ * Convolutional layer with 2x2 stride and 5x5 Kernel
+   * 5 x 5 Kernel, Output Depth 24, Subsampling 2 x 2, Activation Function: Elu
+   * 5 x 5 Kernel, OUtput Depth 36, Subsampling 2 x 2, Activation Function: Elu
+   * 5 x 5 Kernel, Output Depth 48, Subsampling 2 x 2, Activation Function: Elu
+ * Convolutional layer without stride and 3x3 Kernel
+   * 3 x 3 Kernel, Output Depth 64, Activation Function: Elu
+   * 3 x 3 Kernel, Output Depth 64, Activation Function: Elu
+ * Fully Connected Network
+   * Flatten
+   * Layer 100 Nodes
+   * Layer 50 Nodes
+   * Layer 10 Nodes
+   * Layer 1 Nodes
 
-#### 2. Final Model Architecture
+![Nvidial Nework Architecture][image_nvidia_model]
 
-The final model architecture (model.py lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
+The training and validation loss descresses with this model like shown in the chart below.
 
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
+![Training and Validation Loss][image_final_loss]
 
-![alt text][image1]
+### Result Video
 
-#### 3. Creation of the Training Set & Training Process
+This is one round of the first track.
 
-To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
+![Autonomous Drivin][video_autonomous_driving]
 
-![alt text][image2]
-
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
-
-![alt text][image3]
-![alt text][image4]
-![alt text][image5]
-
-Then I repeated this process on track two in order to get more data points.
-
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
-
-![alt text][image6]
-![alt text][image7]
-
-Etc ....
-
-After the collection process, I had X number of data points. I then preprocessed this data by ...
+### Links
+* [Convolutional Neuronal Network (CNN) Architecture](https://devblogs.nvidia.com/deep-learning-self-driving-cars/)
+* [Udacity Self Driving Car Simulator](https://github.com/udacity/self-driving-car-sim)
 
 
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
 
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
