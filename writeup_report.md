@@ -27,7 +27,7 @@ The goals / steps of this project are the following:
 
 [image_final_loss]: ./doc/img/loss.png "Training and Validation Loss"
 
-[video_autonomous_driving]: ./video.mp4 "Autonomous Driving"
+[video_autonomous_driving]: ./doc/img/video-to-gif.gif "Autonomous Driving"
 
 ## Rubric Points
 ### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.
@@ -142,9 +142,9 @@ The training and validation loss descresses with this model like shown in the ch
 
 ### Result Video
 
-This is one round of the first track.
+This is an excerpt of the autonomonous driving of track one.
 
-![Autonomous Drivin][video_autonomous_driving]
+![Autonomous Driving][video_autonomous_driving]
 
 ### Links
 * [Convolutional Neuronal Network (CNN) Architecture](https://devblogs.nvidia.com/deep-learning-self-driving-cars/)
