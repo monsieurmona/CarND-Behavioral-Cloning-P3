@@ -62,7 +62,7 @@ The input images come from three cameras "mounted" on the left, center and right
 
 ![Left Camera Image][image_left_camera] ![Center Camera Image][image_center_camera] ![Right Camera Image][image_right_camera]
 
-As the direction of the road should lead a driver, the images will be cropped to focus on the road parts.
+As the road should lead driving direction, the images will be cropped to focus on the road parts.
 
 ![Cropped road][image_cropped_road]
 
@@ -74,21 +74,21 @@ YUV images:
 
 #### Correction of steering angle
 
-The recored steering angle of left and right camera images must be corrected. It looks like the car is on the right side of the road, if you look at a camera image from the left side, even the car in the center of the raod.
+The recorded steering angle of left and right camera images must be corrected. It looks like the car is on the right side of the road, if you look at a camera image from the left side, even the car in the center of the road.
 
-I have found the best correction value be experiment. I have build a simple network and choose the best correction value by traing a model with a range of correction values and chose the one with the lowest validation loss.
+I have found the best correction value by experiment. I have built a simple network and chose the best correction value by training a model with a range of correction values and chose the one with the lowest validation loss.
 
 **The correction value I have found is +/- 0.5**
 
 #### Recording
 
-I drove the simulated car several times on both tracks in forward direction and in reverse direction. Additonally, I recorded only curves and several "rescue" situations to bring the car back to the track.
+I drove the simulated car several times on both tracks in forward direction and in reverse direction. Additionally, I recorded only curves and several "rescue" situations to bring the car back to the track.
 
-**I collected finially 97701 training images**,consisting of left, center and right camera images.
+**I collected finally 97701 training images**,consisting of left, center and right camera images.
 
 #### Choosing images
 
-Driving straight is by far overrepresented. Thus, I have shuffled the images and stopped accepping new images for certain steering angle bins.
+Driving straight is by far overrepresented. Thus, I have shuffled the images and stopped accepting new images for certain steering angle bins.
 
 The first histogram shows the original distribution, the second histogram shows the normalized distribution (with corrected, steering angles and additional flipped images)
 
@@ -96,19 +96,19 @@ The first histogram shows the original distribution, the second histogram shows 
 
 **68213 left after filtering**
 
-#### Image augumenation
+#### Image augmentation
 
-I assumed that flipping images would be a usefull way increase the amount of training examples. I have tested this with a simple model. The validation lost decreased a bit, especially in the first epochs. Further it helped to have an even distribution of left and right turns.
+I assumed that flipping images would be a useful way increase the amount of training examples. I have tested this with a simple model. The validation lost decreased a bit, especially in the first epochs. Further, it helped to have an even distribution of left and right turns.
 
 **This doubled the amount of images to 136426 images**
 
 #### Model search
 
-I started with a very simple model, one convulution later, max pooling and a small fully connected network, to see effects of paramter changes quickly. I used also only a small subset of training data.
+I started with a very simple model, one convolution later, max pooling and a small fully connected network, to see effects of paramter changes quickly. I used also only a small subset of training data.
 
 At the next step I compared the small network with a LeNet implementation. The learning converged way quicker and the finial validation loss outperformed the simple network (valiation loss: 0.0142 / validation loss: 0.0130).
 
-The results from [Convolutional Neuronal Network (CNN) Architecture](https://devblogs.nvidia.com/deep-learning-self-driving-cars/) from Nvidia looked promising. I wanted to see if the network configuration is also helpful for this car simulation. I didn't see yet an improvment with validation loss. But the car drove much better in autonomunous mode simulation.
+The results from [Convolutional Neuronal Network (CNN) Architecture](https://devblogs.nvidia.com/deep-learning-self-driving-cars/) from NVIDIA looked promising. I wanted to see if the network configuration is also helpful for this car simulation. I didn't see yet an improvement with validation loss. But the car drove much better in autonomous mode simulation.
 
 All these experiments have in common that the models overfits with a small subset of image data. Giving more training data helped to reduce overfitting. Adding a dropout layer after the convolution layer decreased the performance instead.
 
@@ -120,7 +120,7 @@ The final model consists for the follwing layers:
  * Image cropping to focus on the road.
  * Image normalization using per_image_standardization
  * Convert images to YUV color space
-* [Convolutional Neuronal Network (CNN) Architecture](https://devblogs.nvidia.com/deep-learning-self-driving-cars/) from Nvidia
+* [Convolutional Neuronal Network (CNN) Architecture](https://devblogs.nvidia.com/deep-learning-self-driving-cars/) from NVIDIA
  * Convolutional layer with 2x2 stride and 5x5 Kernel
    * 5 x 5 Kernel, Output Depth 24, Subsampling 2 x 2, Activation Function: Elu
    * 5 x 5 Kernel, OUtput Depth 36, Subsampling 2 x 2, Activation Function: Elu
@@ -137,13 +137,13 @@ The final model consists for the follwing layers:
 
 ![Nvidial Nework Architecture][image_nvidia_model]
 
-The training and validation loss descresses with this model like shown in the chart below.
+The training and validation loss decreases with this model like shown in the chart below.
 
 ![Training and Validation Loss][image_final_loss]
 
 ### Result Video
 
-This is an excerpt of the autonomonous driving of track one.
+This is an excerpt of the autonomous driving on track one.
 
 ![Autonomous Driving][video_autonomous_driving]
 
